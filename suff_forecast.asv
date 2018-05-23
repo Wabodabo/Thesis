@@ -106,7 +106,7 @@ pred_ind = psi' .* F_hat;
 %STEP 5%
 %%%%%%%%
 
-r = ksrlin(pred_ind,y);
+
 
 %plot for test
 t = 1:100;
