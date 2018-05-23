@@ -5,7 +5,7 @@ p = 50;
 T = 100;
 H = 10;
 K = 5;
-L = 3;
+L = 1;
 
 [X,y] = simulate_linear(p,T);
 
@@ -29,7 +29,7 @@ B_hat = 1/T * X * F_hat;
 
 %Check if the constraints still hold, throw error otherwise
 if(~isdiag(round(B_hat' * B_hat)) || ~isdiag(round(F_hat' * F_hat)))
-    disp("Constraints might not hold");
+    disp('Constraints might not hold');
     return;
 end
 
@@ -37,42 +37,69 @@ end
 %STEP 2%
 %%%%%%%%
 
-order_stats = zeros(T-1, K + 1);
-order_stats(:,1) = y(2:T);
-order_stats(:,2:end) = F_hat(1:T-1, :);
-
-order_stats = sortrows(order_stats);
-
 c = ceil((T-1)/H);
-sigma_hat = zeros(K);
 
+%Order the factors
+order_f = zeros(T-1, K + 1);
+order_f(:,1) = y(2:T);
+order_f(:,2:end) = F_hat(1:T-1, :);
+
+order_f = sortrows(order_f);
+
+sigma_hat_1 = zeros(K);
+
+%Calculate Sigma_1 based on factors
 for h = 1:H
     if(h ~= H)
-        temp = order_stats((h-1) * 10 + 1: h*c,2:end);
+        temp = order_f((h-1) * 10 + 1: h*c,2:end);
         temp = mean(temp);
-        sigma_hat = sigma_hat + temp'  * temp;
+        sigma_hat_1 = sigma_hat_1 + temp'  * temp;
     else
-        temp = order_stats(h:end,2:end);
+        temp = order_f(h:end,2:end);
         temp = mean(temp);
-        sigma_hat = sigma_hat + temp' * temp;
+        sigma_hat_1 = sigma_hat_1 + temp' * temp;
     end
 end
 
-sigma_hat = sigma_hat/H;
+%Calculate Sigma_2 based on original data
+order_x = zeros(T-1, p + 1);
+order_x(:,1) = y(2:end);
+order_x(:,2:end) = X(:,1:T-1)';
+
+order_x = sortrows(order_x);
+
+Lambda_hat = B_hat' * B_hat \ B_hat';
+
+temp_2 = zeros(p);
+
+for h = 1:H
+    if(h ~= H)
+        temp = order_x((h-1) * 10 + 1: h*c,2:end);
+        temp = mean(temp);
+        temp_2 = temp' * temp;
+    else
+        temp = order_x(h:end,2:end);
+        temp = mean(temp);
+        temp_2 = temp' * temp;
+    end
+end
+
+sigma_hat_1 = sigma_hat_1/H;
+sigma_hat_2 = Lambda_hat * temp_2/H * Lambda_hat';
 
 
 %%%%%%%%
 %STEP 3%
 %%%%%%%%
-[V,D] = eig(sigma_hat);
+[V,D] = eig(sigma_hat_1);
 [~,ind] = sort(diag(D));
 
-ind = ind(end - L + 1: end);
+%ind = ind(end - L + 1: end);
 psi = V(ind);
 
 %%%%%%%%
 %STEP 4%
 %%%%%%%%
-pred_ind = psi' * F_hat(T);
+pred_ind = psi' .* F_hat;
 
 end
