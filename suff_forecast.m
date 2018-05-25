@@ -1,13 +1,13 @@
-function [] = suff_forecast()
+function [R_squared] = suff_forecast()
 %excecutes the sufficient forecasting procedure
 
 p = 50;
-T = 100;
+T = 500;
 H = 10;
 K = 5;
 L = 1;
 
-[X,y] = simulate_linear(p,T);
+[X,y, ~] = simulate_linear(p,T);
 
 %%%%%%%%
 %STEP 1%
@@ -17,11 +17,7 @@ L = 1;
 X = X';
 
 %calculate the eigenvectors
-[V, D] = eig(X' * X);
-
-[~,ind] = sort(diag(D));
-ind = ind(end - K + 1:end);
-eigenvectors = V(:,ind);
+[eigenvectors, ~] = eigs(X' * X, K);
 
 %Calculate F_hat and B_hat
 F_hat = eigenvectors * sqrt(T);
@@ -91,11 +87,7 @@ sigma_hat_2 = Lambda_hat * temp_2/H * Lambda_hat';
 %%%%%%%%
 %STEP 3%
 %%%%%%%%
-[V,D] = eig(sigma_hat_1);
-[~,ind] = sort(diag(D));
-
-%ind = ind(end - L + 1: end);
-psi = V(ind);
+[psi,~] = eigs(sigma_hat_1, L);
 
 %%%%%%%%
 %STEP 4%
@@ -106,7 +98,30 @@ pred_ind = (psi' * F_hat')';
 %STEP 5%
 %%%%%%%%
 
-r = ksrlin(pred_ind,y);
+% Gaussian kernel function
+kerf=@(z)exp(-z.*z/2)/sqrt(2*pi);
+
+h = 10;
+
+regr = ones(T, L + 1);
+f = nan(T+1,1);
+
+for i = 1:T
+    W = kerf((pred_ind - pred_ind(i))/h);
+    W = diag(W);
+    
+    regr(:,2:end) = pred_ind - pred_ind(i);
+    
+    f(i+1) = [1,0] * inv(regr' * W * regr) * regr' * W * y;
+end
+
+e = y(2:end) - f(2:end-1);
+y_bar = mean(y(2:end));
+
+SS_tot = sum((y(2:end) - y_bar).^2);
+SS_res = sum(e.^2);
+
+R_squared = 1 - SS_res/SS_tot;
 
 %plot for test
 t = 1:T;
@@ -115,7 +130,7 @@ plot(t,y);
 hold on
 
 scatter(t,pred_ind);
-plot(t,r.f)
+plot(t,f(1:T))
 legend('DGP', 'predictive indices', 'fitted');
 
 
