@@ -100,7 +100,7 @@ psi = V(ind);
 %%%%%%%%
 %STEP 4%
 %%%%%%%%
-pred_ind = psi' .* F_hat;
+pred_ind = (psi' * F_hat')';
 
 %%%%%%%%
 %STEP 5%
@@ -109,7 +109,14 @@ pred_ind = psi' .* F_hat;
 r = ksrlin(pred_ind,y);
 
 %plot for test
-t = 1:100;
+t = 1:T;
+hold off
 plot(t,y);
+hold on
+
+scatter(t,pred_ind);
+plot(t,r.f)
+legend('DGP', 'predictive indices', 'fitted');
+
 
 end

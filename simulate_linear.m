@@ -15,7 +15,11 @@ alpha = 0.2 + 0.6 * rand(K,1);
 ro = 0.2 + 0.6 * rand(p,1);
 phi = [0.8 0.5 0.3 0 0]';
 b = normrnd(0,1, [p,K]);
-sigma_y = 1;            %sigma checken!!!!!
+sigma_y = 0;
+
+for i=1:K
+   sigma_y = sigma_y + 1/(1-alpha(i)); 
+end
 
 for t=1:T
     %Compute the AR part of the factors and idiosyncratic part
