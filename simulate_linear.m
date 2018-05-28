@@ -32,8 +32,7 @@ for t=1:T
         x(t,j) = b(j,:) * f(t,:)' + normrnd(0,1);
     end
     
-    %y(t) = phi' * f(t,:)' + sigma_y * normrnd(0,1);
-    y(t) = phi' * f(t,:)';
+    y(t) = phi' * f(t,:)' + sigma_y * normrnd(0,1);
 end
 
 end

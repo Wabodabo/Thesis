@@ -2,7 +2,7 @@ function [R_squared] = suff_forecast()
 %excecutes the sufficient forecasting procedure
 
 p = 50;
-T = 500;
+T = 100;
 H = 10;
 K = 5;
 L = 1;
@@ -98,30 +98,7 @@ pred_ind = (psi' * F_hat')';
 %STEP 5%
 %%%%%%%%
 
-% Gaussian kernel function
-kerf=@(z)exp(-z.*z/2)/sqrt(2*pi);
-
-h = 10;
-
-regr = ones(T, L + 1);
-f = nan(T+1,1);
-
-for i = 1:T
-    W = kerf((pred_ind - pred_ind(i))/h);
-    W = diag(W);
-    
-    regr(:,2:end) = pred_ind - pred_ind(i);
-    
-    f(i+1) = [1,0] * inv(regr' * W * regr) * regr' * W * y;
-end
-
-e = y(2:end) - f(2:end-1);
-y_bar = mean(y(2:end));
-
-SS_tot = sum((y(2:end) - y_bar).^2);
-SS_res = sum(e.^2);
-
-R_squared = 1 - SS_res/SS_tot;
+[f,R_squared] = LLR_factor(pred_ind,y);
 
 %plot for test
 t = 1:T;
@@ -129,9 +106,8 @@ hold off
 plot(t,y);
 hold on
 
-scatter(t,pred_ind);
 plot(t,f(1:T))
-legend('DGP', 'predictive indices', 'fitted');
+legend('DGP', 'fitted');
 
 
 end
