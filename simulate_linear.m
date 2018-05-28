@@ -15,7 +15,7 @@ alpha = 0.2 + 0.6 * rand(K,1);
 ro = 0.2 + 0.6 * rand(p,1);
 phi = [0.8 0.5 0.3 0 0]';
 b = normrnd(0,1, [p,K]);
-sigma_y = 1;
+sigma_y = 0;
 
 for t=1:T
     %Compute the AR part of the factors and idiosyncratic part
@@ -35,12 +35,15 @@ for t=1:T
     y(t) = phi' * f(t,:)' + sigma_y * normrnd(0,1);
 end
 
+var = sum(1./(1 - alpha));
+
 x = x - mean(x);
 
 %test plot
 hold off
 indices = (phi' * f')';
 scatter(indices(1:end-1),y(2:end));
+legend('Real predictive indices');
 
 end
 

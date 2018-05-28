@@ -4,7 +4,7 @@ T = length(y);
 L = size(pred_ind,2);
 
 % Epanechnikov kernel function
-%kerf=@(z) 3/4 * (1-z).^2;
+%kerf=@(z) (abs(z) <= 1) .* 3/4 .* (1-z).^2 + (abs(z) > 1) .* 0;
 
 %Gaussian kernel funcetion
 kerf=@(z)exp(-z.*z/2)/sqrt(2*pi);
@@ -45,7 +45,7 @@ hold off
 scatter(pred_ind(1:end-1),y_pred);
 hold on
 tmp = [pred_ind(1:end-1) forecast];
-tmp = sort(tmp);
+tmp = sortrows(tmp);
 plot(tmp(:,1),tmp(:,2));
-scatter(pred_ind(1:end-1), forecast);
+legend('Estimated predictive indices', 'Estimated link function');
 end
