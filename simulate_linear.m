@@ -35,5 +35,12 @@ for t=1:T
     y(t) = phi' * f(t,:)' + sigma_y * normrnd(0,1);
 end
 
+x = x - mean(x);
+
+%test plot
+hold off
+indices = (phi' * f')';
+scatter(indices(1:end-1),y(2:end));
+
 end
 

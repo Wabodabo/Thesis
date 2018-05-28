@@ -2,12 +2,12 @@ function [R_squared] = suff_forecast()
 %excecutes the sufficient forecasting procedure
 
 p = 50;
-T = 100;
+T = 200;
 H = 10;
 K = 5;
 L = 1;
 
-[X,y, ~] = simulate_linear(p,T);
+[X,y, ~] = simulate_linear(p,T); 
 
 %%%%%%%%
 %STEP 1%
@@ -98,15 +98,15 @@ pred_ind = (psi' * F_hat')';
 %STEP 5%
 %%%%%%%%
 
-[f,R_squared] = LLR_factor(pred_ind,y);
+[forecast,R_squared] = LLR_factor(pred_ind,y);
 
 %plot for test
-t = 1:T;
+t = 2:T;
 hold off
-plot(t,y);
+plot(t,y(2:end));
 hold on
 
-plot(t,f(1:T))
+plot(t,forecast)
 legend('DGP', 'fitted');
 
 
