@@ -15,9 +15,12 @@ alpha = 0.2 + 0.6 * rand(K,1);
 ro = 0.2 + 0.6 * rand(p,1);
 phi = [0.8 0.5 0.3 0 0]';
 b = normrnd(0,1, [p,K]);
-sigma_y = 0;
 
-for t=1:T
+%Possible change in Sigma_y
+%sigma_y = sqrt(sum(1./(1 - alpha.^2)));
+sigma_y = 1;
+
+for t=1:T-1
     %Compute the AR part of the factors and idiosyncratic part
     if(t == 1)
         f(t,:) = normrnd(0,1,[1,K]);
@@ -32,10 +35,8 @@ for t=1:T
         x(t,j) = b(j,:) * f(t,:)' + normrnd(0,1);
     end
     
-    y(t) = phi' * f(t,:)' + sigma_y * normrnd(0,1);
+    y(t+1) = phi' * f(t,:)' + sigma_y * normrnd(0,1);
 end
-
-var = sum(1./(1 - alpha));
 
 x = x - mean(x);
 
