@@ -1,6 +1,12 @@
-function [forecast, R_squared] = LLR_factor(pred_ind, y)
+function [forecast_in_sample, forecast_out_sample, R_squared] = LLR_factor(pred_ind, y, real_factors, in_sample)
+%forecast_in_sample:    Returns a vector of in sample forecasts
+%forecast_out_sample:   Returns a single value of the one step ahead forecast
+%R_squared:             Returns the R_squared of the in_sample forecasts
 
-T = length(y);
+forecast_in_sample = 0;
+R_squared = 0;
+
+T = length(pred_ind);
 L = size(pred_ind,2);
 
 % Epanechnikov kernel function
@@ -20,32 +26,53 @@ regr = ones(T - 1, L + 1);
 forecast = nan(T-1,1);
 y_pred = y(2:end);
 
-for i = 1:T-1
-    W = kerf((pred_ind(1:end-1,:) - pred_ind(i))/h);
+
+%Does the local linear regression for every point if in_sample, otherwise
+%just the last
+if(in_sample)
+    for i = 1:T
+        W = kerf((pred_ind(1:end-1,:) - pred_ind(i))/h);
+        W = diag(W);
+
+        regr(:,2:end) = pred_ind(1:end-1,:) - pred_ind(i); 
+
+        beta_hat = (regr' * W * regr) \ regr' * W * y_pred;
+
+        forecast(i) = beta_hat' * [1; 0]; % check if correct!
+    end
+
+    forecast_in_sample = forecast(1:end-1);
+    forecast_out_sample = forecast(end);
+
+    e = y_pred - forecast_in_sample;
+    y_bar = mean(y_pred);
+
+    SS_tot = sum((y_pred - y_bar).^2);
+    SS_res = sum(e.^2);
+
+    R_squared = 1 - SS_res/SS_tot;
+else
+    W = kerf((pred_ind(1:end-1,:) - pred_ind(end))/h);
     W = diag(W);
-    
-    regr(:,2:end) = pred_ind(1:end-1,:) - pred_ind(i); 
-    
-    beta_hat = inv(regr' * W * regr) * regr' * W * y_pred;
-    
-    forecast(i) = beta_hat' * [1; 0]; 
-    %f(i+1) = [1,0] * inv(regr' * W * regr) * regr' * W * y(i+1);
+
+    regr(:,2:end) = pred_ind(1:end-1,:) - pred_ind(end); 
+
+    beta_hat = (regr' * W * regr) \ regr' * W * y_pred;
+
+    forecast_out_sample = beta_hat' * [1; 0]; % check if correct!
 end
 
-e = y_pred - forecast;
-y_bar = mean(y_pred);
-
-SS_tot = sum((y_pred - y_bar).^2);
-SS_res = sum(e.^2);
-
-R_squared = 1 - SS_res/SS_tot;
-
-%test plots
-hold off
-scatter(pred_ind(1:end-1),y_pred);
-hold on
-tmp = [pred_ind(1:end-1) forecast];
-tmp = sortrows(tmp);
-plot(tmp(:,1),tmp(:,2));
-legend('Estimated predictive indices', 'Estimated link function');
+% 
+% %Create real dgp to plot
+% dgp_lin = ([0.8 0.5 0.3 0 0] * real_factors')';
+% 
+% %test plots
+% hold off
+% scatter(pred_ind(1:end-1),y_pred);
+% hold on
+% tmp = [pred_ind(1:end-1) forecast_in_sample];
+% tmp = sortrows(tmp);
+% plot(tmp(:,1),tmp(:,2));
+% scatter(pred_ind(1:end-1), dgp_lin(2:end));
+% legend('Estimated predictive indices', 'Estimated link function');
 end

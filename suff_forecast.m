@@ -1,113 +1,107 @@
-function [R_squared] = suff_forecast()
+function [R_squared, R_OOS] = suff_forecast(p,T_full)
 %excecutes the sufficient forecasting procedure
 
-p = 50;
-T = 200;
+T = T_full/2;    %This size of the out of sample and in-sample periods
 H = 10;
 K = 5;
 L = 1;
 
-[X,y, ~] = simulate_linear(p,T); 
-
-%%%%%%%%
-%STEP 1%
-%%%%%%%%
-
-%Calculate the factors using the description of fan 
+[X,y, real_factors] = simulate_linear(p,T_full); 
 X = X';
 
-%calculate the eigenvectors
-[eigenvectors, ~] = eigs(X' * X, K);
+OOS_forecast = nan(T,1);
 
-%Calculate F_hat and B_hat
-F_hat = eigenvectors * sqrt(T);
-B_hat = 1/T * X * F_hat;
+%Repeats the procedure T/2 times to compute all 1 step ahead forecasts
+for i =1:T
+    %Step 1
+    %calculate the eigenvectors
+    [eigenvectors, ~] = eigs(X(:,1:T + i - 1)' * X(:,1:T + i -1), K);
 
-%Check if the constraints still hold, throw error otherwise
-if(~isdiag(round(B_hat' * B_hat)) || ~isdiag(round(F_hat' * F_hat)))
-    disp('Constraints might not hold');
-    return;
-end
+    %Calculate F_hat and B_hat
+    F_hat = eigenvectors * sqrt(T + i -1);
+    B_hat = 1/(T + i -1) * X(:,1:T + i -1) * F_hat;
 
-%%%%%%%%
-%STEP 2%
-%%%%%%%%
+    %Step 2
+    c = ceil((T + i - 2)/H);
 
-c = ceil((T-1)/H);
+    %Order the factors
+    order_f = zeros(T + i - 2, K + 1);
+    order_f(:,1) = y(2:T + i - 1);
+    order_f(:,2:end) = F_hat(1:T + i - 2, :);
 
-%Order the factors
-order_f = zeros(T-1, K + 1);
-order_f(:,1) = y(2:T);
-order_f(:,2:end) = F_hat(1:T-1, :);
+    order_f = sortrows(order_f);
 
-order_f = sortrows(order_f);
+    sigma_hat_1 = zeros(K);
 
-sigma_hat_1 = zeros(K);
-
-%Calculate Sigma_1 based on factors
-for h = 1:H
-    if(h ~= H)
-        temp = order_f((h-1) * 10 + 1: h*c,2:end);
-        temp = mean(temp);
-        sigma_hat_1 = sigma_hat_1 + temp'  * temp;
-    else
-        temp = order_f(h:end,2:end);
-        temp = mean(temp);
-        sigma_hat_1 = sigma_hat_1 + temp' * temp;
+    %Calculate Sigma_1 based on factors
+    for h = 1:H
+        if(h ~= H)
+            temp = order_f((h-1) * 10 + 1: h*c,2:end);
+            temp = mean(temp);
+            sigma_hat_1 = sigma_hat_1 + temp'  * temp;
+        else
+            temp = order_f(h:end,2:end);
+            temp = mean(temp);
+            sigma_hat_1 = sigma_hat_1 + temp' * temp;
+        end
     end
-end
 
-%Calculate Sigma_2 based on original data
-order_x = zeros(T-1, p + 1);
-order_x(:,1) = y(2:end);
-order_x(:,2:end) = X(:,1:T-1)';
+    % %Calculate Sigma_2 based on original data
+    % order_x = zeros(T-1, p + 1);
+    % order_x(:,1) = y(2:end);
+    % order_x(:,2:end) = X(:,1:T-1)';
+    % 
+    % order_x = sortrows(order_x);
+    % 
+    % Lambda_hat = B_hat' * B_hat \ B_hat';
+    % 
+    % temp_2 = zeros(p);
+    % 
+    % for h = 1:H
+    %     if(h ~= H)
+    %         temp = order_x((h-1) * 10 + 1: h*c,2:end);
+    %         temp = mean(temp);
+    %         temp_2 = temp' * temp;
+    %     else
+    %         temp = order_x(h:end,2:end);
+    %         temp = mean(temp);
+    %         temp_2 = temp' * temp;
+    %     end
+    % end
 
-order_x = sortrows(order_x);
+    sigma_hat_1 = sigma_hat_1/H;
+    %sigma_hat_2 = Lambda_hat * temp_2/H * Lambda_hat';
 
-Lambda_hat = B_hat' * B_hat \ B_hat';
+    %Step 3
+    [psi,~] = eigs(sigma_hat_1, L);
 
-temp_2 = zeros(p);
+    %Step 4
+    pred_ind = (psi' * F_hat')';
 
-for h = 1:H
-    if(h ~= H)
-        temp = order_x((h-1) * 10 + 1: h*c,2:end);
-        temp = mean(temp);
-        temp_2 = temp' * temp;
+    %Step 5
+    if(i == 1)
+        [forecast,OOS_forecast(i), R_squared] = LLR_factor(pred_ind,y(1:T + i -1), real_factors, true);
     else
-        temp = order_x(h:end,2:end);
-        temp = mean(temp);
-        temp_2 = temp' * temp;
+        [~,OOS_forecast(i), ~] = LLR_factor(pred_ind, y(1:T+i-1), real_factors, false);
     end
+    
 end
 
-sigma_hat_1 = sigma_hat_1/H;
-sigma_hat_2 = Lambda_hat * temp_2/H * Lambda_hat';
-
-
-%%%%%%%%
-%STEP 3%
-%%%%%%%%
-[psi,~] = eigs(sigma_hat_1, L);
-
-%%%%%%%%
-%STEP 4%
-%%%%%%%%
-pred_ind = (psi' * F_hat')';
-
-%%%%%%%%
-%STEP 5%
-%%%%%%%%
-
-[forecast,R_squared] = LLR_factor(pred_ind,y);
+%Compute the out of sample R_squared
+R_OOS = 1 - (sum((y(T+1:200) - OOS_forecast).^2))/sum((y(T + 1:200)- mean(y(T + 1:200))).^2);
 
 %plot for test
-t = 2:T;
+t_full = 2:T_full;
+t_in = 2:T;
+t_out = T+1:T_full;
+
 hold off
-plot(t,y(2:end));
+plot(t_full, y(2:end));
 hold on
 
-plot(t,forecast)
-legend('DGP', 'fitted');
+plot(t_in,forecast);
+plot(t_out,OOS_forecast);
+legend('DGP', 'in\_sample forecast', 'out\_sample forecast');
 
 
 end

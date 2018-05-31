@@ -1,4 +1,4 @@
-function [x,y, f] = simulate_linear(p,T)
+function [x,y, f_real] = simulate_linear(p,T)
 %Simulate data for linear forecasting (fan et al 2017 chapter 4.1)
 
 %Variables declared outside of simulation
@@ -9,6 +9,8 @@ f = zeros(T,K);
 u = zeros(T,p);
 x = zeros(T,p);
 y = zeros(T,1);
+
+f_real = zeros(T,K);
 
 %Parameter values 
 alpha = 0.2 + 0.6 * rand(K,1);
@@ -25,9 +27,13 @@ for t=1:T-1
     if(t == 1)
         f(t,:) = normrnd(0,1,[1,K]);
         u(t,:) = normrnd(0,1,[1,p]);
+        
+        f_real(t,:) = f(t,:);
     else
         f(t,:) = alpha' .* f(t-1,:) +  normrnd(0,1,[1,K]);
         u(t,:) = ro' .* u(t-1,:) + normrnd(0,1,[1,p]);
+        
+        f_real(t,:) = alpha' .* f(t-1,:);
     end
     
     %Compute the value of the predictors
@@ -40,11 +46,11 @@ end
 
 x = x - mean(x);
 
-%test plot
-hold off
-indices = (phi' * f')';
-scatter(indices(1:end-1),y(2:end));
-legend('Real predictive indices');
+% %test plot
+% hold off
+% indices = (phi' * f')';
+% scatter(indices(1:end-1),y(2:end));
+% legend('Real predictive indices');
 
 end
 
