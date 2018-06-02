@@ -17,7 +17,7 @@ for j = 1:6
 
     for i =1:num_sim
        [R_IS(i), R_OOS(i)] = suff_forecast(p,T);
-       disp(i);
+       disp(i*j);
     end
 
     output = [p,T;mean(R_IS),mean(R_OOS)];

@@ -34,15 +34,20 @@ for i =1:T
     sigma_hat_1 = zeros(K);
 
     %Calculate Sigma_1 based on factors
-    for h = 1:H
-        if(h ~= H)
-            temp = order_f((h-1) * 10 + 1: h*c,2:end);
+    cont = true;
+    h = 1;
+    while(cont)
+        if(h*c < size(order_f,1))
+            temp = order_f((h-1) * c + 1: h*c,2:end);
             temp = mean(temp);
             sigma_hat_1 = sigma_hat_1 + temp'  * temp;
+            h = h +1;
         else
             temp = order_f(h:end,2:end);
             temp = mean(temp);
             sigma_hat_1 = sigma_hat_1 + temp' * temp;
+            cont = false;
+            H = h;
         end
     end
 
@@ -70,6 +75,7 @@ for i =1:T
     % end
 
     sigma_hat_1 = sigma_hat_1/H;
+    H = 10;
     %sigma_hat_2 = Lambda_hat * temp_2/H * Lambda_hat';
 
     %Step 3
@@ -88,7 +94,7 @@ for i =1:T
 end
 
 %Compute the out of sample R_squared
-R_OOS = 1 - (sum((y(T+1:200) - OOS_forecast).^2))/sum((y(T + 1:200)- mean(y(T + 1:200))).^2);
+R_OOS = 1 - (sum((y(T+1:end) - OOS_forecast).^2))/sum((y(T + 1:end)- mean(y(T + 1:end))).^2);
 
 %plot for test
 t_full = 2:T_full;
