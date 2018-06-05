@@ -64,15 +64,17 @@ end
 
 % 
 % %Create real dgp to plot
-% dgp_lin = ([0.8 0.5 0.3 0 0] * real_factors')';
-% 
-% %test plots
-% hold off
-% scatter(pred_ind(1:end-1),y_pred);
-% hold on
-% tmp = [pred_ind(1:end-1) forecast_in_sample];
-% tmp = sortrows(tmp);
-% plot(tmp(:,1),tmp(:,2));
-% scatter(pred_ind(1:end-1), dgp_lin(2:end));
-% legend('Estimated predictive indices', 'Estimated link function');
+dgp_lin = ([0.8 0.5 0.3 0 0] * real_factors')';
+
+%test plots
+hold off
+scatter(pred_ind(1:end-1),y_pred);
+hold on
+tmp = [pred_ind(1:end-1) forecast_in_sample];
+tmp = sortrows(tmp);
+plot(tmp(:,1),tmp(:,2));
+scatter(pred_ind(1:end-1), dgp_lin(2:T));
+legend('Estimated predictive indices', 'Estimated link function', 'Real predictive indices');
+xlabel('Value of predictive index');
+ylabel('Value of target variable');
 end
