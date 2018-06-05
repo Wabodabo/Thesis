@@ -22,12 +22,5 @@ for j = 1:6
 
     output = [p,T;mean(R_IS),mean(R_OOS)];
     xlswrite(file_name, output, sheet_name, strcat('B', int2str(2*(j) - 1)));
-        
-    p
-    T
-    disp('The mean R\_squared is:');
-    mean(R_IS)
-    disp('The mean R\_squared out of sample is: ');
-    mean(R_OOS)
-    
+     
 end
