@@ -1,13 +1,19 @@
-function [R_squared, R_OOS] = suff_forecast(p,T_full)
-%excecutes the sufficient forecasting procedure
+function [R_IS, R_OOS] = suff_forecast_nonlin(X, y, K, F)
+%Performs the sufficient forecast method as in fan et al 2017 
+%X and y should be the same size
+%Returns the out of sample and in sample R squared
 
-T = T_full/2;    %This size of the out of sample and in-sample periods
+% X should be of size p * T
+if(size(X,2) ~= size(y,1))
+    disp('ERROR X and y not the same size');
+    return;
+end
+
+%Variable definition
+T_full = size(y,1);
+T = T_full/2;
 H = 10;
-K = 5;
-L = 1;
-
-[X,y, real_factors] = simulate_linear(p,T_full); 
-X = X';
+L = 2;
 
 OOS_forecast = nan(T,1);
 
@@ -85,31 +91,14 @@ for i =1:T
     pred_ind = (psi' * F_hat')';
 
     %Step 5
-    if(i == 1)
-        [forecast,OOS_forecast(i), R_squared] = LLR_factor(pred_ind,y(1:T + i -1), true);
-    else
-        [~,OOS_forecast(i), ~] = LLR_factor(pred_ind, y(1:T+i-1), false);
-    end
+%     if(i == 1)
+%         [forecast,OOS_forecast(i), R_IS] = LLR_factor(pred_ind,y(1:T + i -1), true);
+%     else
+%         [~,OOS_forecast(i), ~] = LLR_factor(pred_ind, y(1:T+i-1), false);
+%     end
     
 end
 
-%Compute the out of sample R_squared
-% R_OOS = 1 - (sum((y(T+1:end) - OOS_forecast).^2))/sum((y(T + 1:end)- mean(y(T + 1:end))).^2);
-% 
-% %plot for test
-t_full = 2:T_full;
-t_in = 2:T;
-t_out = T+1:T_full;
-
-hold off
-plot(t_full, y(2:end));
-hold on
-
-plot(t_in,forecast);
-plot(t_out,OOS_forecast);
-legend('DGP', 'in\_sample forecast', 'out\_sample forecast');
-xlabel('Time');
-ylabel('Target variable');
-
+R_OOS = 0;
 
 end
