@@ -77,6 +77,8 @@ for i =1:T
     sigma_hat_1 = sigma_hat_1/H;
     H = 10;
     %sigma_hat_2 = Lambda_hat * temp_2/H * Lambda_hat';
+    
+    error('Sigmas kloppen niet');
 
     %Step 3
     [psi,~] = eigs(sigma_hat_1, L);

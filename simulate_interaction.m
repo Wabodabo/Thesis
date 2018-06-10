@@ -1,4 +1,4 @@
-function [x, y, F] = simulate_interaction(T, alpha, ro, b, phi)
+function [x, y, F, DGP] = simulate_interaction(T, alpha, ro, b, phi)
 %This function simulates a time series as outlined in fan et al. 2017
 %section 4.2
 
@@ -16,12 +16,7 @@ u = zeros(T,p);
 x = zeros(T,p);
 y = zeros(T,1);
 
-
-%Parameter values 
-% alpha = 0.2 + 0.6 * rand(K,1);
-% ro = 0.2 + 0.6 * rand(p,1);
-% b = normrnd(0,1, [p,K]);
-
+error = zeros(T,1);
 
 for t=1:T-1
     %Compute the AR part of the factors and idiosyncratic part
@@ -38,7 +33,8 @@ for t=1:T-1
         x(t,j) = b(j,:) * F(t,:)' + normrnd(0,1);
     end
     
-    y(t+1) = F(t,1)* (F(t,2) + F(t,3) + 1) +  normrnd(0,1);
+    error(t) = normrnd(0,1);
+    y(t+1) = F(t,1)* (F(t,2) + F(t,3) + 1) +  error(t);
 end
 
 x = x - mean(x);
@@ -49,12 +45,13 @@ x = x - mean(x);
 % t = 1:T;
 % plot(t,y);
 
-%Scatter plot of predictive indicis% hold off
-% pred_ind = zeros(T,2);
-% pred_ind(:,1) = (phi(1,:) * f')';
-% pred_ind(:,2) = (phi(2,:) * f')';
-% pred = pred_ind(:,1) .* pred_ind(:,2);
-% 
-% scatter(y,pred);
+%Scatter plot of predictive indices hold off
+hold off
+pred_ind = zeros(T,2);
+pred_ind(:,1) = (phi(:,1)' * F')';
+pred_ind(:,2) = (phi(:,2)' * F')';
+DGP = pred_ind(:,1) .* pred_ind(:,2) + pred_ind(:,1);
+
+%scatter(y(2:end),pred(1:end-1,:));
 
 end
