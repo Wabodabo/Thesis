@@ -88,7 +88,7 @@ for i =1:T
 
     %Step 5
     if(i == 1)
-        [forecast,OOS_forecast(i), R_squared] = LLR_factor(pred_ind,y(1:T + i -1), true);
+        [~,OOS_forecast(i), R_squared] = LLR_factor(pred_ind,y(1:T + i -1), true);
     else
         [~,OOS_forecast(i), ~] = LLR_factor(pred_ind, y(1:T+i-1), false);
     end

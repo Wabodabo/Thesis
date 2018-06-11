@@ -1,28 +1,12 @@
-function [F_hat, psi] = predict_indices_nonlin(X, y, K, B_hat)
-%This function calculates the predictive indices and returns them
+function [sigma_hat_1, sigma_hat_2] = sliced_covariance(F_hat, X, y, B_hat)
+%This function computes the sliced covariance matrix, both using X and
+%using F
 
-% X should be of size p * T
-if(size(X,2) ~= size(y,1))
-    disp('ERROR X and y not the same size');
-    return;
-end
-
-%Variable definition
-T = size(y,1);
-H = 10;
-L = 2;
+T = size(F_hat,1);
 p = size(X,1);
+K = size(F_hat,2);
+H = 10;
 
-
-%Step 1
-%calculate the eigenvectors
-[eigenvectors, ~] = eigs(X' * X, K);
-
-%Calculate F_hat and B_hat
-F_hat = eigenvectors * sqrt(T);
-B_hat = (1/T) *  X * F_hat;
-
-%Step 2
 c = ceil((T-1)/H);
 
 %Order the factors
@@ -81,8 +65,5 @@ end
 
 sigma_hat_1 = sigma_hat_1/H1;
 sigma_hat_2 = Lambda_hat * (temp_2/H2) * Lambda_hat';
-
-%Step 3
-[psi,~] = eigs(sigma_hat_1, L);
 
 end

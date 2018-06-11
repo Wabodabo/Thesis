@@ -7,7 +7,8 @@ num_phi = size(phi,2);
 R = zeros(num_phi,1);
 
 %Computes the rotated subspace
-subspace = inv(H) * phi;
+subspace = H \ phi;
+subspace = subspace / norm(subspace);
 
 for i = 1:num_phi
     R(i) = (phi_hat' * subspace(:,i))^2;

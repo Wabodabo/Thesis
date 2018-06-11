@@ -1,4 +1,4 @@
-function [x, y, F, DGP] = simulate_interaction(T, alpha, ro, b, phi)
+function [x, y, F] = simulate_projection(T, alpha, ro, phi, g)
 %This function simulates a time series as outlined in fan et al. 2017
 %section 4.2
 
@@ -27,8 +27,11 @@ for t=1:T-1
     end
     
     %Compute the value of the predictors
+    
     for j=1:p
-        x(t,j) = b(j,:) * F(t,:)' + normrnd(0,1);
+        z = normrnd(0,1);
+        b = g(z);
+        x(t,j) = b * F(t,:)' + normrnd(0,1);
     end
     
     y(t+1) = F(t,1)* (F(t,2) + F(t,3) + 1) +  normrnd(0,1);
@@ -38,17 +41,9 @@ x = x - mean(x);
 
 
 %test plot
-% hold off
-% t = 1:T;
-% plot(t,y);
-
-%Scatter plot of predictive indices hold off
 hold off
-pred_ind = zeros(T,2);
-pred_ind(:,1) = (phi(:,1)' * F')';
-pred_ind(:,2) = (phi(:,2)' * F')';
-DGP = pred_ind(:,1) .* pred_ind(:,2) + pred_ind(:,1);
+t = 1:T;
+plot(t,y);
 
-%scatter(y(2:end),pred(1:end-1,:));
 
 end
