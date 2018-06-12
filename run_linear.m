@@ -8,7 +8,7 @@ sheet_name = 'Linear Simulation';
 
 
 for i = 5:6
-    disp(strcat('STARTING RUN: ', num2str(i)));
+    disp(strcat('STARTING Linear RUN: ', num2str(i)));
     [R_IS, R_OS] = main_linear(p(i),T(i),num_sim);
 
     xlswrite(file_name, R_IS, sheet_name, strcat('c', num2str(i+2)));

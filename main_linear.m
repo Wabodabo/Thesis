@@ -19,11 +19,13 @@ R_SF_OS = zeros(num_sim,1);
 R_PCR_OS = zeros(num_sim,1);
 R_PC1_OS = zeros(num_sim,1);
 
-y_hat_SF_OS = zeros(test_sample,1);
-y_hat_PCR_OS = zeros(test_sample,1);
-y_hat_PC1_OS = zeros(test_sample,1);
-
 for i=1:num_sim
+     %empty matrices to save out of sample prediction
+     y_hat_SF_OS = zeros(test_sample,1);    
+    y_hat_PCR_OS = zeros(test_sample,1);
+    y_hat_PC1_OS = zeros(test_sample,1);
+    
+    
      B = normrnd(0,1, [p,K]);
      [X, y, ~, ~] = simulate_linear(p, T, alpha, ro, B, phi);
      X = X';
