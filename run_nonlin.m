@@ -1,7 +1,7 @@
 
 p = [100,100,100,500,500,500];
 T = [100,200,500,100,200,500];
-num_sim = 5;
+num_sim = 50;
 
 file_name = 'simulation_output.xlsx';
 sheet_name = 'Non-linear Simulation';
