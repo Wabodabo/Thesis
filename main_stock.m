@@ -1,15 +1,16 @@
-function [R_IS, R_OS] = main_goyal(X,y)
+function [R_IS, R_OS] = main_stock(X,y)
 %This function returns the mean squared error both in sample and out of
 %sample for SF, PCR and PC1
 
-K = 1;
+K = 7;
 L = 1;
-test_sample = size(y,1)/2;
+T = size(y,1);
+test_sample = ceil(T/2);
 
 X = X';
 
- %empty matrices to save out of sample prediction
- y_hat_SF_OS = zeros(test_sample,1);    
+%empty matrices to save out of sample prediction
+y_hat_SF_OS = zeros(test_sample,1);    
 y_hat_PCR_OS = zeros(test_sample,1);
 y_hat_PC1_OS = zeros(test_sample,1);
 
@@ -58,9 +59,9 @@ for t = 1:test_sample
     y_hat_PC1_OS(t) = F_hat(end,1) * b_pc1;
  end
 
- R_SF_OS = R_sq_oos(y_hat_SF_OS, y(test_sample + 1:end));
- R_PCR_OS = R_sq_oos(y_hat_PCR_OS, y(test_sample + 1:end));
- R_PC1_OS = R_sq_oos(y_hat_PC1_OS, y(test_sample + 1: end));
+ R_SF_OS = R_sq_oos(y_hat_SF_OS, y((T - test_sample) + 1:end));
+ R_PCR_OS = R_sq_oos(y_hat_PCR_OS, y((T -test_sample) + 1:end));
+ R_PC1_OS = R_sq_oos(y_hat_PC1_OS, y((T - test_sample) + 1: end));
 
 hold off
 t = 1:size(y,1);

@@ -54,7 +54,6 @@ else
     beta_hat = (regr' * W * regr) \ regr' * W * y_pred;
 
     forecast_out_sample = beta_hat(1); 
-    
 end
 
 end
