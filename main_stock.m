@@ -3,7 +3,7 @@ function [R_IS, R_OS] = main_stock(X,y)
 %sample for SF, PCR and PC1
 
 K = 7;
-L = 1;
+L = 2;
 T = size(y,1);
 test_sample = ceil(T/2);
 
@@ -11,6 +11,7 @@ X = X';
 
 %empty matrices to save out of sample prediction
 y_hat_SF_OS = zeros(test_sample,1);    
+y_hat_SF2_OS = zeros(test_sample,1);    
 y_hat_PCR_OS = zeros(test_sample,1);
 y_hat_PC1_OS = zeros(test_sample,1);
 
@@ -29,20 +30,26 @@ for t = 1:test_sample
     [psi, ~] = eigs(Sigma, L);
 
     %Compute predictive indices
-    pred_ind = (psi' * F_hat')';
+    pred_ind_2 = (psi' * F_hat')';
+    pred_ind_1 = pred_ind_2(:,1);
 
     %Perform local linear regerssion
     if(t ==1)
-        [y_hat_SF_IS, y_hat_SF_OS(t), R_SF_IS] = LLR_factor(pred_ind, y_sample, true);
+        [y_hat_SF_IS, y_hat_SF_OS(t), R_SF_IS] = LLR_factor(pred_ind_1, y_sample, true);
     else
-        [~, y_hat_SF_OS(t), ~] = LLR_factor(pred_ind, y_sample, false);
+        [~, y_hat_SF_OS(t), ~] = LLR_factor(pred_ind_1, y_sample, false);
     end    
     
-    %plots the estimated regression 
-%     hold off
-%     scatter(pred_ind(2:end), y_hat_SF_IS);
-%     hold on
-    
+
+    %Perform LOWESS regression
+    f = fit(pred_ind_2, y_sample, 'Lowess', 'Normalize', 'on');
+    if(t == 1)
+       y_hat_SF2_IS = f(pred_ind_2(1:end-1, :));
+       y_hat_SF2_OS(t) =  f(pred_ind_2(end,:));
+       R_SF2_IS = R_sq(y_hat_SF2_IS, y_sample(2:end));
+    else
+       y_hat_SF2_OS(t) = f(pred_ind_2(end,:));         
+    end
     
     %Perform PCR as benchmark
     [b_pcr, y_hat_pcr] = PCR(F_hat, y_sample, K);
@@ -62,6 +69,7 @@ for t = 1:test_sample
  R_SF_OS = R_sq_oos(y_hat_SF_OS, y((T - test_sample) + 1:end));
  R_PCR_OS = R_sq_oos(y_hat_PCR_OS, y((T -test_sample) + 1:end));
  R_PC1_OS = R_sq_oos(y_hat_PC1_OS, y((T - test_sample) + 1: end));
+ R_SF2_OS = R_sq_oos(y_hat_SF2_OS, y((T - test_sample) + 1:end));
 
 hold off
 t = 1:size(y,1);
@@ -72,8 +80,8 @@ t_out = ((size(y,1) - test_sample)+1):size(y,1);
 plot(t_in, y_hat_SF_IS);
 plot(t_out, y_hat_SF_OS);
 
-% R_IS = [mean(R_SF_IS), mean(R_PCR_IS), mean(R_PC1_IS)];
-% R_OS = [mean(R_SF_OS), mean(R_PCR_OS), mean(R_PC1_OS)];
+R_IS = [R_SF_IS, R_SF2_IS, R_PCR_IS, R_PC1_IS];
+R_OS = [R_SF_OS, R_SF2_OS, R_PCR_OS, R_PC1_OS];
 
 end
 

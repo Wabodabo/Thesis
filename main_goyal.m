@@ -1,10 +1,14 @@
-function [R_IS, R_OS] = main_goyal(X,y)
+function [R_IS, R_OS] = main_goyal(X,y, test_sample, K)
 %This function returns the mean squared error both in sample and out of
 %sample for SF, PCR and PC1
 
-K = 1;
-L = 1;
-test_sample = size(y,1)/2;
+if(test_sample < 168 || test_sample > 504)
+   error('test sample cannot be smaller than 168 or larger than 504'); 
+end
+
+%K = 3;
+L = 2;
+T = size(y,1);
 
 X = X';
 
@@ -12,14 +16,15 @@ X = X';
  y_hat_SF_OS = zeros(test_sample,1);    
 y_hat_PCR_OS = zeros(test_sample,1);
 y_hat_PC1_OS = zeros(test_sample,1);
+y_hat_SF2_OS = zeros(test_sample,1);
 
 for t = 1:test_sample
-    X_sample = X(:, 1:test_sample + t -1);
-    y_sample = y(1:test_sample + t -1);
+    X_sample = X(:, 1:(T - test_sample) + t -1);
+    y_sample = y(1:(T - test_sample) + t -1);
     %Obtain factors
-    [eigenvectors, ~] = eigs(X_sample' * X_sample / (test_sample + t -1), K);
-    F_hat = eigenvectors * sqrt(test_sample + t -1);
-    B_hat = (1/(test_sample + t -1)) * X_sample * F_hat;
+    [eigenvectors, ~] = eigs(X_sample' * X_sample / ((T - test_sample) + t -1), K);
+    F_hat = eigenvectors * sqrt(T - test_sample + t -1);
+    B_hat = (1/(T - test_sample + t -1)) * X_sample * F_hat;
 
     %Obtain the sliced covariance matrix
     Sigma = sliced_covariance(F_hat, X_sample, y_sample, B_hat);
@@ -28,20 +33,25 @@ for t = 1:test_sample
     [psi, ~] = eigs(Sigma, L);
 
     %Compute predictive indices
-    pred_ind = (psi' * F_hat')';
+    pred_ind_2 = (psi' * F_hat')';
+    pred_ind_1 = pred_ind_2(:,1);
 
-    %Perform local linear regerssion
+    %Perform local linear regerssion with 1 predictive index
     if(t ==1)
-        [y_hat_SF_IS, y_hat_SF_OS(t), R_SF_IS] = LLR_factor(pred_ind, y_sample, true);
+        [y_hat_SF_IS, y_hat_SF_OS(t), R_SF_IS] = LLR_factor(pred_ind_1, y_sample, true);
     else
-        [~, y_hat_SF_OS(t), ~] = LLR_factor(pred_ind, y_sample, false);
+        [~, y_hat_SF_OS(t), ~] = LLR_factor(pred_ind_1, y_sample, false);
     end    
-    
-    %plots the estimated regression 
-%     hold off
-%     scatter(pred_ind(2:end), y_hat_SF_IS);
-%     hold on
-    
+      
+    %Perform LOWESS with 2 predictive indices
+    f = fit(pred_ind_2, y_sample, 'Lowess', 'Normalize', 'on');
+    if(t == 1)
+       y_hat_SF2_IS = f(pred_ind_2(1:end-1, :));
+       y_hat_SF2_OS(t) =  f(pred_ind_2(end,:));
+       R_SF2_IS = R_sq(y_hat_SF2_IS, y_sample(2:end));
+    else
+        y_hat_SF2_OS(t) = f(pred_ind_2(end,:));        
+    end    
     
     %Perform PCR as benchmark
     [b_pcr, y_hat_pcr] = PCR(F_hat, y_sample, K);
@@ -58,21 +68,22 @@ for t = 1:test_sample
     y_hat_PC1_OS(t) = F_hat(end,1) * b_pc1;
  end
 
- R_SF_OS = R_sq_oos(y_hat_SF_OS, y(test_sample + 1:end));
- R_PCR_OS = R_sq_oos(y_hat_PCR_OS, y(test_sample + 1:end));
- R_PC1_OS = R_sq_oos(y_hat_PC1_OS, y(test_sample + 1: end));
+ R_SF_OS = R_sq_oos(y_hat_SF_OS, y((T- test_sample) + 1:end));
+ R_PCR_OS = R_sq_oos(y_hat_PCR_OS, y((T - test_sample) + 1:end));
+ R_PC1_OS = R_sq_oos(y_hat_PC1_OS, y((T- test_sample) + 1: end));
+ R_SF2_OS = R_sq_oos(y_hat_SF2_OS, y((T-test_sample) + 1:end));
 
 hold off
-t = 1:size(y,1);
+t = 1:T;
 plot(t,y);
 hold on
-t_in = 2:test_sample;
-t_out = ((size(y,1) - test_sample)+1):size(y,1);
+t_in = 2: T - test_sample;
+t_out = ((T - test_sample)+1):size(y,1);
 plot(t_in, y_hat_SF_IS);
 plot(t_out, y_hat_SF_OS);
 
-% R_IS = [mean(R_SF_IS), mean(R_PCR_IS), mean(R_PC1_IS)];
-% R_OS = [mean(R_SF_OS), mean(R_PCR_OS), mean(R_PC1_OS)];
+R_IS = [R_SF_IS, R_SF2_IS, R_PCR_IS, R_PC1_IS];
+R_OS = [R_SF_OS, R_SF2_OS, R_PCR_OS, R_PC1_OS];
 
 end
 

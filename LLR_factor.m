@@ -26,34 +26,39 @@ regr = ones(T - 1, L + 1);
 forecast = nan(T-1,1);
 y_pred = y(2:end);
 
+%Checks if univariate of multivariate data is inserted
+if(L ==1)
+    %Does the local linear regression for every point if in_sample, otherwise
+    %just the last
+    if(in_sample)
+        for i = 1:T
+            W = kerf((pred_ind(1:end-1,:) - pred_ind(i))/h);
+            W = diag(W);
 
-%Does the local linear regression for every point if in_sample, otherwise
-%just the last
-if(in_sample)
-    for i = 1:T
-        W = kerf((pred_ind(1:end-1,:) - pred_ind(i))/h);
+            regr(:,2:end) = pred_ind(1:end-1,:) - pred_ind(i); 
+
+            beta_hat = (regr' * W * regr) \ regr' * W * y_pred;
+
+            forecast(i) = beta_hat(1);
+        end
+
+        forecast_in_sample = forecast(1:end-1);
+        forecast_out_sample = forecast(end);
+
+        R_squared = R_sq(forecast_in_sample, y(2:end));
+    else
+        W = kerf((pred_ind(1:end-1,:)  - pred_ind(end))/h);
         W = diag(W);
 
-        regr(:,2:end) = pred_ind(1:end-1,:) - pred_ind(i); 
+        regr(:,2:end) = pred_ind(1:end-1,:) - pred_ind(end); 
 
         beta_hat = (regr' * W * regr) \ regr' * W * y_pred;
 
-        forecast(i) = beta_hat(1);
+        forecast_out_sample = beta_hat(1); 
     end
-
-    forecast_in_sample = forecast(1:end-1);
-    forecast_out_sample = forecast(end);
-
-    R_squared = R_sq(forecast_in_sample, y(2:end));
 else
-    W = kerf((pred_ind(1:end-1,:)  - pred_ind(end))/h);
-    W = diag(W);
-
-    regr(:,2:end) = pred_ind(1:end-1,:) - pred_ind(end); 
-
-    beta_hat = (regr' * W * regr) \ regr' * W * y_pred;
-
-    forecast_out_sample = beta_hat(1); 
+   error('function does not support more than 1 predictive index'); 
 end
+
 
 end
